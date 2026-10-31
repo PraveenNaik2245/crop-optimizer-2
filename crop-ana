@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Pattern Optimizer</title>
+    <meta name="description" content="AI-Based Crop Pattern Optimizer helps farmers and agricultural professionals to get crop recommendations based on soil and environmental conditions.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-color: #e6ffe6; 
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(52,211,153, 0.15) 0%, rgba(0,0,0,0) 60%),
+                radial-gradient(circle at 90% 80%, rgba(20,83,45, 0.1) 0%, rgba(0,0,0,0) 70%),
+                repeating-radial-gradient(circle at 50% 10%, #dcfce7 0%, #e6ffe6 10%, #e6ffe6 100%);
+            background-attachment: fixed;
+        }
+        .card {
+            box-shadow: 0 15px 40px rgba(0, 70, 0, 0.25); 
+            transition: transform 0.3s ease;
+            border: 1px solid #c8e6c9; 
+        }
+        .card:hover {
+            transform: translateY(-3px);
+        }
+        .input-field {
+            border: 2px solid #34d399; 
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #059669; 
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3);
+        }
+        .btn-primary {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-primary:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+        .history-item {
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        .input-field.error {
+            border-color: #ef4444; /* red-500 */
+        }
+        .input-field.error:focus {
+            border-color: #dc2626; /* red-600 */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+        }
+        .history-item:hover {
+            background-color: #6af59b; 
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex items-start justify-center">
+
+    <div class="w-full max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-800">AI-Based Crop Pattern Optimizer</h1>
+            <p class="text-xl text-green-700 mt-2">Enter your agricultural inputs for a crop recommendation.</p>
+        </header>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        
+            <div class="md:col-span-1 bg-white rounded-xl p-6 shadow-xl border border-green-200 h-full">
+                <h2 class="text-xl font-bold text-green-800 border-b pb-2 mb-4 flex items-center justify-between">
+                    <span>Prediction History</span>
+                    <span id="user-id-display" class="text-xs text-gray-500 font-mono hidden"></span>
+                </h2>
+                <div id="history-list" class="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <p id="loading-history" class="text-gray-500 italic">Loading prediction history...</p>
+                    <p id="no-history" class="text-gray-500 italic hidden">No past predictions found. Run an analysis!</p>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <div class="w-full card bg-white rounded-xl p-6 md:p-10">
+                    <div id="input-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2 grid grid-cols-3 gap-4">
+                                <div class="space-y-2">
+                                    <label for="n_input" class="block text-sm font-medium text-gray-700">Nitrogen (N) - ppm</label>
+                                    <input type="number" id="n_input" placeholder="e.g., 55" value="55" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 10, Max: 60</div>
+                                    <div id="n_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="p_input" class="block text-sm font-medium text-gray-700">Phosphorus (P) - ppm</label>
+                                    <input type="number" id="p_input" placeholder="e.g., 32" value="32" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 10, Max: 60</div>
+                                    <div id="p_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="k_input" class="block text-sm font-medium text-gray-700">Potassium (K) - ppm</label>
+                                    <input type="number" id="k_input" placeholder="e.g., 25" value="25" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 15, Max: 120</div>
+                                    <div id="k_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 grid grid-cols-3 gap-4">
+                                <div class="space-y-2">
+                                    <label for="ca_input" class="block text-sm font-medium text-gray-700">Calcium (Ca) - ppm</label>
+                                    <input type="number" id="ca_input" placeholder="e.g., 500" value="500" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 400, Max: 2500</div>
+                                    <div id="ca_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="mg_input" class="block text-sm font-medium text-gray-700">Magnesium (Mg) - ppm</label>
+                                    <input type="number" id="mg_input" placeholder="e.g., 70" value="70" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 50, Max: 300</div>
+                                    <div id="mg_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="s_input" class="block text-sm font-medium text-gray-700">Sulfur (S) - ppm</label>
+                                    <input type="number" id="s_input" placeholder="e.g., 30" value="30" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                    <div class="text-xs text-gray-500 italic">Min: 10, Max: 50</div>
+                                    <div id="s_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="ph_input" class="block text-sm font-medium text-gray-700">Soil pH Level</label>
+                                <select id="ph_input" class="input-field w-full p-3 rounded-lg focus:outline-none bg-white" required>
+                                    <option value="" disabled>Select pH Level</option>
+                                    <option value="very_acidic">Very Acidic (&lt; 5.5)</option>
+                                    <option value="acidic" selected>Acidic (5.5 - 6.5)</option>
+                                    <option value="neutral">Neutral (6.6 - 7.3)</option>
+                                    <option value="alkaline">Alkaline (7.4 - 8.4)</option>
+                                    <option value="very_alkaline">Very Alkaline (&gt; 8.5)</option>
+                                </select>
+                                <div id="ph_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="area_input" class="block text-sm font-medium text-gray-700">Land Area (Acres)</label>
+                                <input type="number" id="area_input" placeholder="e.g., 10" value="10" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                <div id="area_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="soil_type_input" class="block text-sm font-medium text-gray-700">Soil Type</label>
+                                <select id="soil_type_input" class="input-field w-full p-3 rounded-lg focus:outline-none bg-white" required>
+                                    <option value="" disabled>Select Soil Type</option>
+                                    <option value="loamy" selected>Loamy (Ideal)</option>
+                                    <option value="clay">Clay</option>
+                                    <option value="sandy">Sandy</option>
+                                    <option value="silt">Silt</option>
+                                    <option value="peat">Peat</option>
+                                    <option value="chalky">Chalky</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="temp_input" class="block text-sm font-medium text-gray-700">Avg. Temperature (°C)</label>
+                                <input type="number" id="temp_input" placeholder="e.g., 25" value="25" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                                <div id="temp_input_error" class="text-red-500 text-xs italic mt-1 hidden"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="location_input" class="block text-sm font-medium text-gray-700">Location (City/Region)</label>
+                                <input type="text" id="location_input" placeholder="e.g., Central Valley, CA" value="Central Valley, CA" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="prev_crop_input" class="block text-sm font-medium text-gray-700">Previous Crop Grown</label>
+                                <input type="text" id="prev_crop_input" placeholder="e.g., Alfalfa, Corn, or None" value="Corn" class="input-field w-full p-3 rounded-lg focus:outline-none" required>
+                            </div>
+
+                        </div>
+
+                        <div class="mt-8 text-center">
+                            <button onclick="analyzeInputs(true)" class="btn-primary w-full md:w-1/2 py-3 px-6 bg-emerald-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500 focus:ring-opacity-50">
+                                Get Crop Recommendation
+                            </button>
+                        </div>
+                    </div>
+                    <div id="result-container" class="mt-10 p-6 bg-green-100 rounded-xl hidden">
+                        <h2 class="text-2xl font-bold text-green-800 border-b pb-2 mb-4">Analysis Result</h2>
+                        <div id="result-message" class="text-lg text-gray-700 space-y-3">
+                        </div>
+                        <div id="error-message" class="text-red-600 mt-4 font-semibold p-3 border border-red-400 bg-red-100 rounded-lg hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <script type="module">
+        const LOCAL_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCsLvGr-kOPiFDkpULX1ojcpcVwvBMfsHI", 
+            authDomain: "ai-base-crop-pattern-optimizer.firebaseapp.com",
+            projectId: "ai-base-crop-pattern-optimizer",
+            storageBucket: "ai-base-crop-pattern-optimizer.firebasestorage.app",
+            messagingSenderId: "364315358686",
+            appId: "1:364315358686:web:d09c9b359468e5a905d94f"
+        };
+        const LOCAL_APP_ID = LOCAL_FIREBASE_CONFIG.projectId || 'local-agri-app';
+
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel, collection, query, orderBy, limit, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('Debug');
+
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : LOCAL_APP_ID;
+        
+        window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : LOCAL_FIREBASE_CONFIG;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+
+        let app;
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        window.isAuthReady = false;
+
+        async function initFirebase() {
+            try {
+                if (!window.firebaseConfig || !window.firebaseConfig.apiKey || window.firebaseConfig.apiKey.includes('YOUR_API_KEY')) {
+                    console.warn("⚠️ Using Placeholder Config. Firestore saving is disabled until you update LOCAL_FIREBASE_CONFIG with your real keys. ⚠️");
+                    window.isAuthReady = true; 
+                    return; 
+                }
+                app = initializeApp(window.firebaseConfig);
+                window.db = getFirestore(app);
+                window.auth = getAuth(app);
+                await signInAnonymously(window.auth);
+                console.log("Firebase: Signed in anonymously.");
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                    } else {
+                        window.userId = crypto.randomUUID(); 
+                    }
+                    window.isAuthReady = true;                    
+                    document.getElementById('user-id-display').textContent = `User: ${window.userId}`;
+                    document.getElementById('user-id-display').classList.remove('hidden');
+                    window.loadPastPredictions();
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                document.getElementById('loading-history').textContent = `Error initializing Firebase: ${error.message}`;
+            }
+        }
+        window.firestore = { collection, query, orderBy, limit, addDoc, onSnapshot };
+        initFirebase();
+    </script>
+
+    <script>
+        const uiState = {
+            errorMessage: document.getElementById('error-message'),
+            resultContainer: document.getElementById('result-container'),
+            resultMessage: document.getElementById('result-message'),
+            historyList: document.getElementById('history-list'),
+            loadingHistory: document.getElementById('loading-history'),
+            noHistory: document.getElementById('no-history')
+        };
+                const CROP_DATA = [
+            { 
+                name: 'Maize (Corn)', 
+                notes: 'A heavy feeder that thrives in well-drained, nutrient-rich soil.', 
+                description: 'Maize, also known as corn, is a versatile cereal grain that is one of the most widely cultivated crops in the world. It is used for food, animal feed, and as a source of biofuel.',
+                manure: 'Responds well to nitrogen-rich fertilizers. A balanced NPK fertilizer (e.g., 10-10-10) at planting is recommended, followed by a side-dressing of urea or ammonium nitrate when the plants are knee-high.',
+                pros: ['High yield potential.', 'Versatile uses (food, feed, fuel).', 'Wide adaptability to different climates.'],
+                cons: ['High nutrient and water requirements.', 'Susceptible to pests and diseases.', 'Requires well-drained soil.'],
+                ideal: { N: [40, 60], P: [25, 45], K: [25, 40], pH: [6.0, 7.2], temp: [21, 30], rainfall: [500, 800], Ca: [600, 1500], Mg: [60, 200], S: [15, 40] } 
+            },
+            { 
+                name: 'High-yield Wheat', 
+                notes: 'Prefers temperate climates and well-prepared loamy soil.',
+                description: 'Wheat is a cereal grain, which is a worldwide staple food. The many species of wheat together make up the genus Triticum; the most widely grown is common wheat.',
+                manure: 'Requires a good balance of NPK. Apply a phosphorus and potassium-rich fertilizer at sowing. Nitrogen can be applied in split doses during the growing season.',
+                pros: ['Major global staple food.', 'Can be grown in a variety of climates.', 'Good market demand.'],
+                cons: ['Susceptible to rust and other fungal diseases.', 'Price can be volatile.', 'Can deplete soil nutrients if not managed well.'], 
+                ideal: { N: [35, 55], P: [20, 35], K: [20, 30], pH: [6.0, 7.0], temp: [15, 24], rainfall: [450, 650], Ca: [600, 1500], Mg: [100, 300], S: [20, 50] } 
+            },
+            { 
+                name: 'Rice (Paddy)', 
+                notes: 'Best grown in flooded paddies with clay soil that retains water.',
+                description: 'Rice is the seed of the grass species Oryza sativa (Asian rice) or less commonly Oryza glaberrima (African rice). As a cereal grain, it is the most widely consumed staple food for a large part of the world\'s human population.',
+                manure: 'Requires high nitrogen input. Organic manure like farmyard manure or compost is highly recommended. Split application of nitrogen fertilizer is crucial for high yield.',
+                pros: ['Staple food for over half the world\'s population.', 'Can be grown continuously on the same land for decades.', 'Adapted to a wide range of environmental conditions.'],
+                cons: ['High water requirement.', 'Labor-intensive cultivation.', 'Methane emissions from paddy fields contribute to greenhouse gases.'], 
+                ideal: { N: [30, 50], P: [15, 25], K: [20, 30], pH: [5.5, 6.5], temp: [25, 32], rainfall: [1200, 1500], Ca: [600, 1500], Mg: [100, 300], S: [15, 40] }
+            },
+            { 
+                name: 'Barley', 
+                notes: 'Drought-tolerant grain, often grown in cooler, drier climates.',
+                description: 'Barley is a wonderfully versatile cereal grain with a rich nutlike flavor and an appealing chewy, pasta-like consistency. It is a member of the grass family.',
+                manure: 'Lower nutrient requirements compared to wheat. A starter fertilizer with a good amount of phosphorus is beneficial. Avoid excessive nitrogen, which can cause lodging.',
+                pros: ['Drought tolerant.', 'Shorter growing season than wheat.', 'Multiple uses including animal fodder, brewing, and food.'],
+                cons: ['Lower yield compared to wheat.', 'Limited use in food products compared to wheat.', 'Can be susceptible to certain diseases.'],
+                ideal: { N: [25, 45], P: [15, 30], K: [15, 25], pH: [6.5, 7.8], temp: [12, 22], rainfall: [300, 500] }
+            },
+            { 
+                name: 'Sorghum', 
+                notes: 'Extremely drought and heat tolerant grain, vital in arid regions.',
+                description: 'Sorghum is a genus of about 25 species of flowering plants in the grass family Poaceae. Some of these species are grown as cereals for human consumption and some in pastures for animals.',
+                manure: 'Very efficient in nutrient use. It responds well to small amounts of nitrogen and phosphorus. Organic manure is beneficial for soil health.',
+                pros: ['Highly tolerant to drought and heat.', 'Low input requirements.', 'Versatile uses including food, fodder, and biofuel.'],
+                cons: ['Lower market price than other major cereals.', 'Can be affected by bird damage.', 'Processing can be difficult for food use.'],
+                ideal: { N: [30, 50], P: [15, 25], K: [15, 25], pH: [5.5, 8.5], temp: [26, 34], rainfall: [400, 600] }
+            },
+            { 
+                name: 'Oats', 
+                notes: 'A very hardy grain that tolerates colder, wetter conditions than wheat.',
+                description: 'Oats are a type of cereal grain from the Poaceae grass family of plants. The grain refers specifically to the edible seeds of oat grass, which is what ends up in our breakfast bowls.',
+                manure: 'Low nutrient requirements. Often grown on residual fertility from previous crops. A small amount of starter fertilizer can be beneficial.',
+                pros: ['Grows well in cool, moist climates.', 'Excellent for soil health and as a cover crop.', 'Nutritious for human and animal consumption.'],
+                cons: ['Lower yield than wheat or barley.', 'Can be susceptible to lodging in fertile soils.', 'Limited market compared to other grains.'], 
+                ideal: { N: [20, 40], P: [15, 30], K: [15, 30], pH: [5.5, 7.0], temp: [10, 20], rainfall: [400, 600] } 
+            },
+            { 
+                name: 'Rye', 
+                notes: 'Extremely cold-tolerant grain, can grow in poor soils.',
+                description: 'Rye is a grass grown extensively as a grain, a cover crop and a forage crop. It is a member of the wheat tribe and is closely related to both wheat and barley.',
+                manure: 'Very low nutrient requirements. Can grow in less fertile soils where other cereals fail. Excessive nitrogen can cause lodging.',
+                pros: ['Extremely cold hardy and can grow in poor soils.', 'Excellent for weed suppression as a cover crop.', 'Deep root system improves soil structure.'],
+                cons: ['Lower market demand than other cereals.', 'Can be difficult to mill.', 'Susceptible to ergot, a fungal disease.'],
+                ideal: { N: [20, 35], P: [15, 25], K: [15, 25], pH: [5.0, 7.0], temp: [10, 20], rainfall: [350, 500] } 
+            },
+            { 
+                name: 'Soybeans', 
+                notes: 'A legume that can fix its own nitrogen. Good for crop rotation.',
+                description: 'The soybean or soya bean is a species of legume native to East Asia, widely grown for its edible bean, which has numerous uses.',
+                manure: 'As a legume, it fixes its own nitrogen. Phosphorus and potassium are important. Inoculation with Bradyrhizobium bacteria is crucial for nitrogen fixation.',
+                pros: ['Fixes atmospheric nitrogen, improving soil fertility.', 'High in protein and oil, with many uses.', 'Good for crop rotation with cereals.'],
+                cons: ['Susceptible to a wide range of pests and diseases.', 'Requires a well-drained soil.', 'Can be sensitive to soil acidity.'],
+                ideal: { N: [10, 25], P: [25, 40], K: [30, 50], pH: [6.0, 6.8], temp: [20, 30], rainfall: [500, 700], Ca: [800, 2000], Mg: [100, 300], S: [15, 40] } 
+            },
+            { 
+                name: 'Peanuts', 
+                notes: 'A legume that grows best in sandy, well-drained soil.',
+                description: 'The peanut, also known as the groundnut, goober, or monkey nut, and taxonomically classified as Arachis hypogaea, is a legume crop grown mainly for its edible seeds.',
+                manure: 'Being a legume, it requires less nitrogen. Calcium is critical for pod development. Gypsum (calcium sulfate) is often applied.',
+                pros: ['Fixes nitrogen.', 'Drought tolerant to some extent.', 'High value crop.'],
+                cons: ['Requires a long, warm growing season.', 'Susceptible to fungal diseases like leaf spot and rust.', 'Harvesting can be labor-intensive.'],
+                ideal: { N: [10, 20], P: [20, 35], K: [25, 40], pH: [5.9, 7.0], temp: [25, 30], rainfall: [500, 700] }
+            },
+            { 
+                name: 'Chickpeas', 
+                notes: 'A cool-season legume, very drought-tolerant.',
+                description: 'The chickpea or chick pea is an annual legume of the family Fabaceae, subfamily Faboideae. Its different types are variously known as gram or Bengal gram, garbanzo or garbanzo bean, or Egyptian pea.',
+                manure: 'Low nutrient requirements. It can fix its own nitrogen. A starter dose of phosphorus is beneficial.',
+                pros: ['Highly drought-tolerant.', 'Fixes nitrogen.', 'Good source of protein for human consumption.'],
+                cons: ['Susceptible to Ascochyta blight.', 'Low yield in comparison to cereals.', 'Sensitive to high temperatures during flowering.'],
+                ideal: { N: [10, 20], P: [15, 25], K: [20, 30], pH: [6.0, 8.0], temp: [18, 26], rainfall: [300, 500] }
+            },
+            { 
+                name: 'Peas', 
+                notes: 'A cool-season legume, fixes nitrogen and improves soil.',
+                description: 'The pea is most commonly the small spherical seed or the seed-pod of the pod fruit Pisum sativum. Each pod contains several peas, which can be green or yellow.',
+                manure: 'Fixes its own nitrogen. Requires good levels of phosphorus and potassium. Avoid high nitrogen fertilizers.',
+                pros: ['Fixes nitrogen.', 'Improves soil structure.', 'Short growing season.'],
+                cons: ['Susceptible to pests like aphids and diseases like powdery mildew.', 'Requires support for climbing varieties.', 'Sensitive to high temperatures.'],
+                ideal: { N: [10, 20], P: [20, 35], K: [25, 40], pH: [6.0, 7.5], temp: [13, 18], rainfall: [400, 500] }
+            },
+            { 
+                name: 'Potatoes', 
+                notes: 'A cool-weather tuber crop that prefers slightly acidic, loamy soil.',
+                description: 'The potato is a starchy tuber of the plant Solanum tuberosum and is a root vegetable native to the Americas. The plant is a perennial in the nightshade family Solanaceae.',
+                manure: 'Heavy feeder, especially of potassium. A balanced fertilizer is needed. Organic matter like compost improves soil structure and water retention.',
+                pros: ['High yield per unit area.', 'Nutritionally rich.', 'Can be stored for long periods.'],
+                cons: ['Susceptible to late blight and other diseases.', 'Requires hilling to protect tubers from sunlight.', 'Can be labor-intensive to harvest.'],
+                ideal: { N: [30, 50], P: [40, 60], K: [50, 80], pH: [5.0, 6.0], temp: [15, 20], rainfall: [500, 750], Ca: [500, 1200], Mg: [100, 300], S: [20, 50] }
+            },
+            { 
+                name: 'Cassava (Yucca)', 
+                notes: 'A tropical root crop, highly tolerant of poor soils and drought.',
+                description: 'Cassava is a long-tuberous starchy root about two inches around and eight inches long. Cassava root is also known as yuca, manioc, or arrowroot.',
+                manure: 'Can grow in poor soils but responds well to potassium. A balanced fertilizer will increase yield.',
+                pros: ['Extremely drought tolerant and can grow in poor soils.', 'Can be left in the ground for a long time before harvesting.', 'Important staple food in many tropical countries.'],
+                cons: ['Contains cyanide and must be properly processed before consumption.', 'Low in protein.', 'Susceptible to mosaic virus and other diseases.'],
+                ideal: { N: [20, 40], P: [10, 20], K: [40, 60], pH: [5.5, 6.5], temp: [25, 29], rainfall: [1000, 1500] }
+            },
+            { 
+                name: 'Sweet Potatoes', 
+                notes: 'A warm-weather crop that thrives in sandy loam soils.',
+                description: 'The sweet potato is a dicotyledonous plant that belongs to the bindweed or morning glory family, Convolvulaceae. Its large, starchy, sweet-tasting, tuberous roots are a root vegetable.',
+                manure: 'Low nitrogen requirement. High potassium and phosphorus are important for root development. Avoid excessive nitrogen which promotes vine growth over tuber growth.',
+                pros: ['Highly nutritious.', 'Drought tolerant once established.', 'Can be grown in a wide range of soil types.'],
+                cons: ['Requires a long, warm growing season.', 'Susceptible to sweet potato weevil.', 'Requires curing after harvest for best flavor and storage.'],
+                ideal: { N: [20, 40], P: [20, 40], K: [50, 80], pH: [5.8, 6.7], temp: [24, 29], rainfall: [750, 1000] }
+            },
+            { 
+                name: 'Carrots', 
+                notes: 'A root vegetable that prefers loose, sandy soil for straight root growth.',
+                description: 'The carrot is a root vegetable, typically orange in color, though purple, black, red, white, and yellow cultivars exist.',
+                manure: 'Low nitrogen requirement. High potassium is important for root development. Use well-composted manure as fresh manure can cause forking of roots.',
+                pros: ['Popular and widely consumed vegetable.', 'Can be grown in a relatively small space.', 'Can be stored for a long time.'],
+                cons: ['Requires loose, sandy soil for good root shape.', 'Susceptible to pests like carrot rust fly.', 'Slow to germinate.'],
+                ideal: { N: [20, 40], P: [30, 50], K: [40, 60], pH: [6.0, 6.8], temp: [16, 21], rainfall: [350, 500] }
+            },
+            { 
+                name: 'Garlic', 
+                notes: 'Planted in fall or spring, requires a cold period to form bulbs.',
+                description: 'Garlic is a species in the onion genus, Allium. Its close relatives include the onion, shallot, leek, chive, and Chinese onion.',
+                manure: 'Requires well-drained, fertile soil. A balanced fertilizer can be applied at planting. Avoid high nitrogen late in the season.',
+                pros: ['High-value crop.', 'Has a long storage life.', 'Relatively few pests.'],
+                cons: ['Requires a long growing season.', 'Labor-intensive to plant and harvest.', 'Requires a cold period to form bulbs, which may not be possible in all climates.'],
+                ideal: { N: [20, 35], P: [25, 40], K: [20, 40], pH: [6.0, 7.0], temp: [13, 24], rainfall: [450, 600] }
+            },
+            { 
+                name: 'Grapes (Wine)', 
+                notes: 'Prefers well-drained, less fertile soil and specific climate conditions.',
+                description: 'A grape is a fruit, botanically a berry, of the deciduous woody vines of the flowering plant genus Vitis. Grapes can be eaten fresh as table grapes or they can be used for making wine, jam, grape juice, jelly, grape seed extract, raisins, vinegar, and grape seed oil.',
+                manure: 'Low to moderate nutrient requirements. Too much nitrogen can lead to excessive canopy growth at the expense of fruit quality. Well-rotted compost is beneficial.',
+                pros: ['High-value crop, especially for wine grapes.', 'Perennial crop, so no need for annual planting.', 'Can be grown on hillsides and less fertile land.'],
+                cons: ['High initial investment.', 'Requires specialized knowledge and skills for pruning and training.', 'Susceptible to a range of diseases and pests.'],
+                ideal: { N: [15, 25], P: [10, 20], K: [30, 50], pH: [6.0, 7.0], temp: [15, 25], rainfall: [500, 700] }
+            },
+            { 
+                name: 'Bananas', 
+                notes: 'A tropical fruit requiring high humidity, and protection from wind.',
+                description: 'A banana is an elongated, edible fruit – botanically a berry – produced by several kinds of large herbaceous flowering plants in the genus Musa.',
+                manure: 'Heavy feeder, especially of potassium. Regular application of a balanced fertilizer with high potassium is necessary for good yield.',
+                pros: ['Fast-growing and can produce fruit within a year.', 'High market demand.', 'Can be grown year-round in tropical climates.'],
+                cons: ['Requires a lot of water and nutrients.', 'Susceptible to Panama disease and other diseases.', 'Vulnerable to wind damage.'],
+                ideal: { N: [40, 60], P: [10, 20], K: [80, 120], pH: [5.5, 6.5], temp: [26, 30], rainfall: [1800, 2500] }
+            },
+            { 
+                name: 'Apples', 
+                notes: 'A temperate-climate fruit that requires a winter chilling period.',
+                description: 'An apple is an edible fruit produced by an apple tree. Apple trees are cultivated worldwide and are the most widely grown species in the genus Malus.',
+                manure: 'Moderate nutrient requirements. A balanced fertilizer in the spring is usually sufficient. Avoid excessive nitrogen.',
+                pros: ['High demand and good market price.', 'Perennial crop.', 'Many varieties available for different climates and uses.'],
+                cons: ['Requires a chilling period to set fruit.', 'High initial investment for orchard establishment.', 'Susceptible to pests and diseases like apple scab and codling moth.'],
+                ideal: { N: [20, 30], P: [15, 25], K: [40, 60], pH: [6.0, 7.0], temp: [13, 24], rainfall: [800, 1200] }
+            },
+            { 
+                name: 'Tomatoes', 
+                notes: 'A versatile vegetable that prefers warm, sunny conditions.',
+                description: 'The tomato is the edible berry of the plant Solanum lycopersicum, commonly known as a tomato plant. The species originated in western South America and Central America.',
+                manure: 'Heavy feeder. Requires a balanced fertilizer, with extra phosphorus for fruit development. Calcium is important to prevent blossom-end rot.',
+                pros: ['High demand and versatile culinary uses.', 'Can be grown in a variety of systems (field, greenhouse).', 'Many varieties with different growth habits and fruit types.'],
+                cons: ['Susceptible to many pests and diseases.', 'Requires support for indeterminate varieties.', 'Sensitive to frost.'],
+                ideal: { N: [30, 50], P: [30, 50], K: [40, 60], pH: [6.0, 6.8], temp: [21, 27], rainfall: [600, 800], Ca: [1000, 2500], Mg: [100, 300], S: [20, 50] }
+            },
+            { 
+                name: 'Onions', 
+                notes: 'A bulb vegetable that requires a good supply of water and nutrients.',
+                description: 'The onion, also known as the bulb onion or common onion, is a vegetable that is the most widely cultivated species of the genus Allium.',
+                manure: 'Heavy feeder. Requires a good supply of nutrients, especially nitrogen in the early stages and potassium for bulb development. Avoid high sulfur soils which can make onions pungent.',
+                pros: ['Good storage life.', 'Widely used in cooking.', 'Relatively few major pests.'],
+                cons: ['Requires a long growing season.', 'Sensitive to weed competition.', 'Requires a specific day length to form bulbs, depending on the variety.'],
+                ideal: { N: [25, 40], P: [30, 50], K: [30, 50], pH: [6.0, 7.0], temp: [20, 25], rainfall: [650, 750] }
+            },
+            { 
+                name: 'Spinach', 
+                notes: 'A leafy green that grows quickly in cool weather and is sensitive to heat.',
+                description: 'Spinach is a leafy green flowering plant native to central and western Asia. It is of the order Caryophyllales, family Amaranthaceae, subfamily Chenopodioideae.',
+                manure: 'High nitrogen requirement for leafy growth. A balanced fertilizer or compost is ideal. Ensure good moisture.',
+                pros: ['Fast-growing, cool-season crop.', 'Highly nutritious.', 'Can be harvested multiple times (cut-and-come-again).'],
+                cons: ['Bolts (goes to seed) in hot weather.', 'Susceptible to leaf miners and downy mildew.', 'Short storage life after harvesting.'],
+                ideal: { N: [25, 45], P: [20, 30], K: [30, 50], pH: [6.5, 7.5], temp: [15, 20], rainfall: [400, 600] }
+            },
+            { 
+                name: 'Kale', 
+                notes: 'A very hardy leafy green, its flavor can improve after a light frost.',
+                description: 'Kale is a green, leafy, cruciferous vegetable that is rich in nutrients. It may offer a range of health benefits for the whole body.',
+                manure: 'Moderate feeder. Benefits from a balanced fertilizer or compost. Does not require very rich soil.',
+                pros: ['Very hardy and can be harvested into the winter.', 'Highly nutritious (a "superfood").', 'Relatively pest and disease resistant.'],
+                cons: ['Can become tough and bitter in hot weather.', 'Some people find the flavor too strong.', 'Can be susceptible to cabbage worms.'],
+                ideal: { N: [25, 50], P: [20, 30], K: [30, 50], pH: [6.0, 7.5], temp: [15, 21], rainfall: [400, 600] }
+            },
+            { 
+                name: 'Broccoli', 
+                notes: 'A cool-weather vegetable that requires fertile soil and consistent moisture.',
+                description: 'Broccoli is an edible green plant in the cabbage family whose large flowering head, stalk and small associated leaves are eaten as a vegetable.',
+                manure: 'Heavy feeder. Requires fertile soil rich in organic matter. A balanced fertilizer is needed, with a side dressing of nitrogen when heads start to form.',
+                pros: ['Highly nutritious.', 'Can produce side shoots for a secondary harvest after the main head is cut.', 'Good market value.'],
+                cons: ['Sensitive to heat, which can cause it to bolt.', 'Requires consistent moisture.', 'Susceptible to cabbage worms and clubroot disease.'],
+                ideal: { N: [35, 55], P: [30, 50], K: [40, 60], pH: [6.0, 7.0], temp: [16, 21], rainfall: [500, 700] }
+            },
+            { 
+                name: 'Bell Peppers', 
+                notes: 'Warm-season vegetable that requires plenty of sun and well-drained soil.',
+                description: 'The bell pepper is the fruit of plants in the Grossum cultivar group of the species Capsicum annuum. Cultivars of the plant produce fruits in different colors, including red, yellow, orange, green, white, and purple.',
+                manure: 'Moderate feeder. A balanced fertilizer at planting and a side dressing when fruits start to form is beneficial. Avoid excessive nitrogen.',
+                pros: ['High market value.', 'Many varieties with different colors and flavors.', 'Can be very productive in the right conditions.'],
+                cons: ['Requires a long, warm growing season.', 'Susceptible to pests like aphids and diseases like blossom-end rot.', 'Sensitive to cold temperatures.'],
+                ideal: { N: [30, 50], P: [30, 50], K: [40, 60], pH: [6.0, 7.0], temp: [21, 29], rainfall: [600, 800] }
+            },
+            { 
+                name: 'Cucumbers', 
+                notes: 'A vine crop that needs regular watering and prefers warm temperatures.',
+                description: 'Cucumber is a widely-cultivated creeping vine plant in the Cucurbitaceae gourd family that bears cucumiform fruits, which are used as vegetables.',
+                manure: 'Heavy feeder. Requires fertile soil and regular feeding with a balanced liquid fertilizer. Consistent watering is crucial.',
+                pros: ['Fast-growing and productive.', 'Can be grown on trellises to save space.', 'Many uses, from fresh eating to pickling.'],
+                cons: ['Requires a lot of water.', 'Susceptible to pests like cucumber beetles and diseases like powdery mildew.', 'Can become bitter if stressed by heat or drought.'],
+                ideal: { N: [25, 45], P: [20, 35], K: [30, 50], pH: [5.5, 6.8], temp: [20, 30], rainfall: [600, 900] }
+            },
+            { 
+                name: 'Lettuce', 
+                notes: 'A cool-season leafy green that can bolt in high heat.',
+                description: 'Lettuce is an annual plant of the daisy family, Asteraceae. It is most often grown as a leaf vegetable, but sometimes for its stem and seeds.',
+                manure: 'Prefers soil rich in organic matter. A balanced fertilizer or compost is ideal. Consistent moisture is important for tender leaves.',
+                pros: ['Fast-growing, with some varieties ready to harvest in 30 days.', 'Can be grown in small spaces and containers.', 'Many different types for a variety of textures and flavors.'],
+                cons: ['Bolts in hot weather.', 'Susceptible to slugs and aphids.', 'Short storage life.'],
+                ideal: { N: [20, 35], P: [15, 25], K: [25, 40], pH: [6.0, 7.0], temp: [15, 20], rainfall: [400, 600] }
+            },
+            { 
+                name: 'Zucchini', 
+                notes: 'A highly productive summer squash that grows quickly in warm weather.',
+                description: 'Zucchini, also known as courgette, is a summer squash in the Cucurbitaceae plant family, alongside melons, spaghetti squash, and cucumbers.',
+                manure: 'Heavy feeder. Requires rich, fertile soil with plenty of compost. A balanced fertilizer can be applied during the growing season.',
+                pros: ['Extremely productive.', 'Fast-growing.', 'Versatile in the kitchen.'],
+                cons: ['Can be overly productive, leading to a glut of fruit.', 'Susceptible to powdery mildew and squash vine borers.', 'Takes up a lot of space.'],
+                ideal: { N: [25, 45], P: [25, 45], K: [30, 50], pH: [6.0, 7.5], temp: [20, 28], rainfall: [500, 750] }
+            },
+            { 
+                name: 'Pumpkin', 
+                notes: 'A sprawling vine crop that requires a long, warm growing season and rich soil.',
+                description: 'A pumpkin is a cultivar of winter squash that is round with smooth, slightly ribbed skin, and most often deep yellow to orange in coloration.',
+                manure: 'Heavy feeder. Requires very rich soil with a lot of compost. A balanced fertilizer can be applied, but avoid too much nitrogen.',
+                pros: ['Can be stored for a long time.', 'Many uses, from cooking to decoration.', 'Can be grown in a variety of climates.'],
+                cons: ['Takes up a very large amount of space.', 'Requires a long growing season.', 'Susceptible to powdery mildew and squash bugs.'],
+                ideal: { N: [25, 45], P: [30, 50], K: [40, 60], pH: [5.5, 7.5], temp: [18, 30], rainfall: [500, 1000] }
+            },
+            { 
+                name: 'Asparagus', 
+                notes: 'A perennial vegetable that requires a few years to establish before harvesting.',
+                description: 'Asparagus is a perennial flowering plant species in the genus Asparagus. Its young shoots are used as a spring vegetable.',
+                manure: 'Moderate feeder. Incorporate plenty of compost and a balanced fertilizer into the bed before planting. Top-dress with compost annually.',
+                pros: ['Perennial, so it comes back every year.', 'One of the first vegetables to harvest in the spring.', 'High-value crop.'],
+                cons: ['Takes 2-3 years to establish before you can harvest.', 'Requires a dedicated bed and can live for 20 years or more.', 'Susceptible to asparagus beetles.'],
+                ideal: { N: [20, 30], P: [25, 40], K: [25, 40], pH: [6.5, 7.5], temp: [16, 24], rainfall: [600, 800] }
+            },
+            { 
+                name: 'Cotton', 
+                notes: 'A heat-loving crop that requires a long, sunny growing season.',
+                description: 'Cotton is a soft, fluffy staple fiber that grows in a boll, or protective case, around the seeds of the cotton plants of the genus Gossypium in the mallow family Malvaceae.',
+                manure: 'Requires careful nutrient management. Nitrogen is important for growth, but too much can reduce lint yield. Phosphorus and potassium are also key.',
+                pros: ['Major cash crop in many parts of the world.', 'Fiber is in high demand for textiles.', 'Drought tolerant to some extent.'],
+                cons: ['Very high water usage in irrigated systems.', 'Susceptible to a wide range of pests, especially boll weevil.', 'Requires a long, hot, and sunny growing season.'],
+                ideal: { N: [30, 50], P: [20, 30], K: [20, 35], pH: [5.8, 8.0], temp: [25, 35], rainfall: [550, 1000] }
+            },
+            { 
+                name: 'Sugarcane', 
+                notes: 'A tropical grass that requires a lot of water and sunlight.',
+                description: 'Sugarcane, or sugar cane, are several species and hybrids of tall perennial grass in the genus Saccharum, tribe Andropogoneae, that are used for sugar production.',
+                manure: 'Heavy feeder. Requires high levels of nitrogen, phosphorus, and potassium for good growth. Filter press mud, a byproduct of sugar mills, is an excellent manure.',
+                pros: ['Most efficient converter of sunlight into chemical energy.', 'Multiple uses, including sugar, ethanol, and biomass for energy.', 'Perennial crop, with multiple harvests (ratoons) from a single planting.'],
+                cons: ['Extremely high water requirement.', 'Labor-intensive harvesting.', 'Can have a negative impact on the environment if not managed sustainably.'],
+                ideal: { N: [30, 50], P: [15, 25], K: [40, 60], pH: [5.0, 8.0], temp: [24, 30], rainfall: [1500, 2500] }
+            },
+            { 
+                name: 'Coffee (Arabica)', 
+                notes: 'Grown at high altitudes in tropical regions, needs specific conditions.',
+                description: 'Coffea arabica, also known as the Arabian coffee, "coffee shrub of Arabia", "mountain coffee" or "arabica coffee", is a species of Coffea. It is believed to be the first species of coffee to be cultivated, and is the dominant cultivar, representing about 60% of global production.',
+                manure: 'Requires a balanced supply of nutrients. Organic matter is very important for soil health. A balanced NPK fertilizer with micronutrients is often used.',
+                pros: ['High-value crop with strong global demand.', 'Can be grown in agroforestry systems, which is good for biodiversity.', 'Provides employment for millions of people in developing countries.'],
+                cons: ['Very specific climate and altitude requirements.', 'Susceptible to coffee leaf rust and other diseases.', 'Price can be very volatile on the world market.'],
+                ideal: { N: [30, 40], P: [10, 20], K: [30, 40], pH: [6.0, 6.5], temp: [18, 22], rainfall: [1500, 2000] }
+            },
+            { 
+                name: 'Alfalfa', 
+                notes: 'A deep-rooted legume, tolerant of alkaline soils and drought.',
+                description: 'Alfalfa, also called lucerne, is a perennial flowering plant in the legume family Fabaceae. It is cultivated as an important forage crop in many countries around the world.',
+                manure: 'As a legume, it fixes its own nitrogen. It is a heavy user of phosphorus and potassium, which must be supplied.',
+                pros: ['Excellent forage for livestock.', 'Improves soil structure and fertility.', 'Drought tolerant due to its deep root system.'],
+                cons: ['High water requirement for maximum yield.', 'Can cause bloat in livestock if not managed properly.', 'Requires well-drained soil.'],
+                ideal: { N: [10, 20], P: [30, 50], K: [40, 60], pH: [6.5, 7.5], temp: [18, 27], rainfall: [300, 600] }
+            },
+            { 
+                name: 'Blueberries', 
+                notes: 'An acid-loving plant that requires low pH to thrive.',
+                description: 'Blueberries are perennial flowering plants with blue or purple berries. They are classified in the section Cyanococcus within the genus Vaccinium.',
+                manure: 'Requires acidic fertilizers, like those formulated for azaleas. Ammonium sulfate is often used as a nitrogen source. Avoid nitrate-based fertilizers.',
+                pros: ['High-value fruit with strong consumer demand.', 'Rich in antioxidants and other nutrients.', 'Perennial plant.'],
+                cons: ['Very specific soil pH requirement (acidic).', 'Can be slow to establish.', 'Susceptible to birds and some fungal diseases.'],
+                ideal: { N: [15, 25], P: [20, 30], K: [15, 25], pH: [4.5, 5.5], temp: [16, 25], rainfall: [400, 500], Ca: [400, 800], Mg: [50, 150], S: [10, 30] }
+            },
+        ];
+        async function getSimulatedWeatherData(location) {
+            console.log(`Simulating weather API call for ${location}`);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const locationHash = location.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+            const seededRandom = (seed) => {
+                let x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            };
+
+            return {
+                avgRainfall: 300 + Math.floor(seededRandom(locationHash) * 900),
+                sunlightHours: 1800 + Math.floor(seededRandom(locationHash + 1) * 1200),
+                source: "Simulated Weather API"
+            };
+        }
+        function getSustainabilityScore(matchScore, inputs, weatherData, crop) {
+            let score = matchScore; 
+            const rainfallMatch = 1 - (Math.abs(weatherData.avgRainfall - (crop.ideal.rainfall[0] + crop.ideal.rainfall[1])/2) / ((crop.ideal.rainfall[1] - crop.ideal.rainfall[0]) * 2));
+            score = (score + (rainfallMatch > 0 ? rainfallMatch : 0)) / 2;
+            if (crop.name.includes('Rice') && inputs.soilType !== 'clay') {
+                score *= 0.7;
+            }
+            if (inputs.soilType === 'sandy' && weatherData.avgRainfall < 600) {
+                 score *= 0.85;
+            }
+
+            return score;
+        }
+        function calculateScore(inputs, crop) {
+            let score = 0;
+            let maxScore = 0;
+            const weights = { N: 1, P: 1, K: 1, pH: 1.5, temp: 1.2, Ca: 0.8, Mg: 0.8, S: 0.8, rainfall: 1.1 };
+
+            for (const param in crop.ideal) {
+                if(!inputs[param]) continue;
+
+                const weight = weights[param] || 1;
+                maxScore += weight;
+                const [min, max] = crop.ideal[param];
+                const value = inputs[param];
+
+                if (value >= min && value <= max) {
+                    score += weight;
+                } else {
+                    const range = max - min;
+                    const diff = value < min ? min - value : value - max;
+                    let partialScore = (1 - (diff / (range * 1.5)));
+                    if (partialScore < 0) partialScore = 0;
+                    score += weight * partialScore;
+                }
+            }
+            return score / maxScore;
+        }
+
+        function validateAllInputs(inputs, requiredNumericFields, requiredTextFields) {
+            let isValid = true;
+            // Reset all previous errors
+            requiredNumericFields.forEach(key => {
+                const inputEl = document.getElementById(`${key.toLowerCase()}_input`);
+                const errorEl = document.getElementById(`${key.toLowerCase()}_input_error`);
+                if(inputEl) inputEl.classList.remove('error');
+                if (errorEl) errorEl.classList.add('hidden');
+            });
+             uiState.errorMessage.classList.add('hidden');
+
+
+            const missingNumeric = requiredNumericFields.find(key => isNaN(inputs[key]));
+            const missingText = requiredTextFields.find(key => inputs[key] === "");
+
+            if (missingNumeric || missingText) {
+                const missingField = missingNumeric ? missingNumeric : missingText;
+                uiState.errorMessage.textContent = missingNumeric 
+                    ? `Please enter a valid number for the ${missingField} input.`
+                    : `Please select or enter a value for the required field: ${missingField}.`;
+
+                console.error(`Validation failed. Missing or invalid input for: ${missingField}. Please fill this in.`);
+                uiState.errorMessage.classList.remove('hidden');
+                uiState.resultContainer.classList.add('hidden');
+                uiState.errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                isValid = false;
+            }
+
+            requiredNumericFields.forEach(key => {
+                if (inputs[key] < 0) {
+                    const inputEl = document.getElementById(`${key.toLowerCase()}_input`);
+                    const errorEl = document.getElementById(`${key.toLowerCase()}_input_error`);
+                    if (inputEl) inputEl.classList.add('error');
+                    if (errorEl) {
+                        errorEl.classList.remove('hidden');
+                         errorEl.textContent = 'Value cannot be negative.'
+                    }
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                 uiState.errorMessage.textContent = `Please correct the highlighted fields.`;
+                 uiState.errorMessage.classList.remove('hidden');
+                 uiState.errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            return isValid;
+        }
+
+                async function analyzeInputs(shouldSave = false) {
+            if (!window.isAuthReady && shouldSave) {
+                console.warn("Authentication not ready yet. Please wait a moment.");
+                return;
+            }
+
+            const phCategory = document.getElementById('ph_input').value;
+            const phValueMap = {
+                'very_acidic': 5.0,
+                'acidic': 6.0,
+                'neutral': 7.0,
+                'alkaline': 7.9,
+                'very_alkaline': 9.0
+            };
+            const numericPh = phValueMap[phCategory];
+
+            const inputs = {
+                N: parseFloat(document.getElementById('n_input').value),
+                P: parseFloat(document.getElementById('p_input').value),
+                K: parseFloat(document.getElementById('k_input').value),
+                Ca: parseFloat(document.getElementById('ca_input').value), 
+                Mg: parseFloat(document.getElementById('mg_input').value), 
+                S: parseFloat(document.getElementById('s_input').value),  
+                pH: numericPh,
+                phCategory: phCategory,
+                area: parseFloat(document.getElementById('area_input').value),
+                location: document.getElementById('location_input').value.trim(),
+                temp: parseFloat(document.getElementById('temp_input').value),
+                previousCrop: document.getElementById('prev_crop_input').value.trim().toLowerCase(),
+                soilType: document.getElementById('soil_type_input').value, 
+            };
+            const requiredNumericFields = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'area', 'temp'];
+            const requiredTextFields = ['location', 'previousCrop', 'soilType', 'phCategory'];
+
+            if (!validateAllInputs(inputs, requiredNumericFields, requiredTextFields)) {
+                return;
+            }
+
+            const weatherData = await getSimulatedWeatherData(inputs.location);
+            inputs.rainfall = weatherData.avgRainfall;
+
+            const allScores = CROP_DATA.map(crop => {
+                const matchScore = calculateScore(inputs, crop);
+                const sustainabilityScore = getSustainabilityScore(matchScore, inputs, weatherData, crop);
+                return {
+                    ...crop,
+                    sustainabilityScore: sustainabilityScore,
+                    matchScore: matchScore
+                };
+            }).sort((a, b) => b.sustainabilityScore - a.sustainabilityScore);
+
+            const top5Crops = allScores.slice(0, 5);
+            const bestCrop = top5Crops[0];
+
+            let color = "text-green-800";
+            if (bestCrop.sustainabilityScore < 0.5) {
+                color = "text-red-600";
+            } else if (bestCrop.sustainabilityScore < 0.75) {
+                color = "text-yellow-700";
+            }
+
+            const predictionData = {
+                ...inputs,
+                topCrops: top5Crops,
+                recommendation: bestCrop.name,
+                notes: bestCrop.notes,
+                description: bestCrop.description,
+                manure: bestCrop.manure,
+                pros: bestCrop.pros,
+                cons: bestCrop.cons,
+                color,
+                matchScore: bestCrop.matchScore,
+                sustainabilityScore: bestCrop.sustainabilityScore,
+                weatherData,
+                timestamp: Date.now()
+            };
+
+            displayResults(predictionData);
+
+            if (shouldSave && window.db && window.userId) {
+                try {
+                    const predictionsRef = window.firestore.collection(window.db, `artifacts/${window.appId}/users/${window.userId}/predictions`);
+                    await window.firestore.addDoc(predictionsRef, predictionData);
+                    console.log("Prediction saved successfully to Firestore.");
+                } catch (e) {
+                    console.error("Error saving prediction: ", e);
+                }
+            }
+        }
+
+        function displayResults(data) {
+            const { N, P, K, Ca, Mg, S, pH, phCategory, area, location, temp, previousCrop, soilType, recommendation, notes, description, manure, pros, cons, color, matchScore, sustainabilityScore, weatherData, topCrops } = data;
+
+            const soilDisplayName = soilType.charAt(0).toUpperCase() + soilType.slice(1);
+            const phDisplayName = phCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            uiState.resultMessage.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-green-600">Soil & Location</h3>
+                        <ul class="list-disc list-inside ml-4 text-gray-700 text-sm">
+                            <li><strong>Location:</strong> ${location}</li>
+                            <li><strong>Land Area:</strong> ${area} Acres</li>
+                             <li><strong>Previous Crop:</strong> ${previousCrop.charAt(0).toUpperCase() + previousCrop.slice(1)}</li>
+                            <li><strong>Soil Type:</strong> <span class="font-bold bg-green-200 px-1 rounded">${soilDisplayName}</span></li>
+                            <li><strong>pH Level:</strong> <span class="font-bold bg-green-200 px-1 rounded">${phDisplayName}</span></li>
+                            <li><strong>Nutrients (ppm):</strong> <strong>N:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${N}</span>, <strong>P:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${P}</span>, <strong>K:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${K}</span>, <strong>Ca:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${Ca}</span>, <strong>Mg:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${Mg}</span>, <strong>S:</strong> <span class="font-mono bg-gray-200 px-1 rounded">${S}</span></li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h3 class="text-xl font-semibold text-blue-600">Simulated Weather Data</h3>
+                         <ul class="list-disc list-inside ml-4 text-gray-700 text-sm">
+                            <li><strong>Avg. Annual Rainfall:</strong> ${weatherData.avgRainfall} mm</li>
+                            <li><strong>Avg. Annual Sunlight:</strong> ${weatherData.sunlightHours} hours</li>
+                            <li class="text-xs italic text-gray-500">Note: This is simulated data. A real app needs a weather API key.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="text-2xl font-bold ${color}">Top Recommendation: ${recommendation}</h3>
+                    <div class="flex items-center space-x-4 mt-2">
+                        <p class="font-bold text-lg ${(matchScore < 0.5) ? 'text-red-500' : (matchScore < 0.75) ? 'text-yellow-600' : 'text-green-600'}">
+                            Soil Match: ${(matchScore * 100).toFixed(0)}%
+                        </p>
+                        <p class="font-bold text-lg ${color}">
+                            Overall Sustainability: ${(sustainabilityScore * 100).toFixed(0)}%
+                        </p>
+                    </div>
+                    <div class="mt-4 space-y-3 text-gray-700">
+                        ${description ? `
+                        <div>
+                            <h4 class="font-semibold text-lg">Crop Description</h4>
+                            <p class="text-sm">${description}</p>
+                        </div>
+                        ` : ''}
+                        ${manure ? `
+                        <div>
+                            <h4 class="font-semibold text-lg">Manure Recommendation</h4>
+                            <p class="text-sm">${manure}</p>
+                        </div>
+                        ` : ''}
+                        ${(pros && cons) ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-lg text-green-600">Pros</h4>
+                                <ul class="list-disc list-inside text-sm">
+                                    ${pros.map(pro => `<li>${pro}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg text-red-600">Cons</h4>
+                                <ul class="list-disc list-inside text-sm">
+                                    ${cons.map(con => `<li>${con}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Other Suitable Crops -->
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Other Suitable Crops (Top 5)</h3>
+                    <ul class="mt-2 space-y-2">
+                        ${topCrops.slice(1).map(crop => `
+                            <li class="p-2 bg-gray-100 rounded-lg flex justify-between items-center">
+                                <span class="font-bold text-gray-700">${crop.name}</span>
+                                <span class="text-sm font-medium text-gray-600">Sustainability: ${(crop.sustainabilityScore * 100).toFixed(0)}%</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+
+            `;
+            uiState.resultContainer.classList.remove('hidden');
+        }
+        window.loadPastPredictions = function() {
+            if (!window.db || !window.userId) {
+                uiState.loadingHistory.textContent = "Waiting for user authentication...";
+                return;
+            }
+             if (window.firebaseConfig && window.firebaseConfig.apiKey && window.firebaseConfig.apiKey.includes('YOUR_API_KEY')) {
+                uiState.loadingHistory.textContent = "History is disabled. Update LOCAL_FIREBASE_CONFIG to enable saving/loading.";
+                return;
+            }
+            const predictionsRef = window.firestore.collection(window.db, `artifacts/${window.appId}/users/${window.userId}/predictions`);
+            const q = window.firestore.query(predictionsRef, window.firestore.orderBy('timestamp', 'desc'), window.firestore.limit(10));
+
+            window.firestore.onSnapshot(q, (snapshot) => {
+                uiState.historyList.innerHTML = '';
+                uiState.loadingHistory.classList.add('hidden');
+                
+                if (snapshot.empty) {
+                    uiState.noHistory.classList.remove('hidden');
+                    return;
+                }
+                uiState.noHistory.classList.add('hidden');
+
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    const date = new Date(data.timestamp).toLocaleDateString();
+                    const time = new Date(data.timestamp).toLocaleTimeString();
+
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item p-3 border border-green-300 rounded-lg bg-green-50 shadow-sm';
+                    historyItem.innerHTML = `
+                        <p class="font-semibold text-green-800">${data.location}</p>
+                        <p class="text-sm text-gray-600 mt-1">
+                            <span class="font-bold">${data.recommendation || 'Analysis Pending'}</span>
+                            <br>
+                            <span class="text-xs text-gray-400">Soil: ${data.soilType ? data.soilType.charAt(0).toUpperCase() + data.soilType.slice(1) : 'N/A'}</span>
+                            <br>
+                            <span class="text-xs text-gray-400">${date} @ ${time}</span>
+                        </p>
+                    `;
+                    historyItem.onclick = () => {
+                        document.getElementById('n_input').value = data.N;
+                        document.getElementById('p_input').value = data.P;
+                        document.getElementById('k_input').value = data.K;
+                        document.getElementById('ca_input').value = data.Ca !== undefined && data.Ca !== null ? data.Ca : ''; 
+                        document.getElementById('mg_input').value = data.Mg !== undefined && data.Mg !== null ? data.Mg : ''; 
+                        document.getElementById('s_input').value = data.S !== undefined && data.S !== null ? data.S : '';  
+                        document.getElementById('ph_input').value = data.phCategory || 'acidic';
+                        document.getElementById('area_input').value = data.area;
+                        document.getElementById('location_input').value = data.location;
+                        document.getElementById('temp_input').value = data.temp;
+                        document.getElementById('prev_crop_input').value = data.previousCrop;
+                        document.getElementById('soil_type_input').value = data.soilType || ""; 
+                        displayResults(data); 
+                        document.getElementById('result-container').scrollIntoView({ behavior: 'smooth' });
+                    };
+
+                    uiState.historyList.appendChild(historyItem);
+                });
+            }, (error) => {
+                console.error("Error loading predictions:", error);
+                uiState.loadingHistory.textContent = `Error loading history: ${error.code}`;
+            });
+        };
+    
+        window.analyzeInputs = analyzeInputs;
+        window.loadPastPredictions = loadPastPredictions;
+    </script>
+</body>
+</html>
